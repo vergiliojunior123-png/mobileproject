@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  Platform
+  Platform,
+  Alert
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,24 +17,17 @@ const CHAVE = '@tarefas';
 export default function App() {
   const [tarefa, setTarefa] = useState('');
   const [lista, setLista] = useState([]);
-  const [carregado, setCarregado] = useState(false);
 
   useEffect(() => {
     carregarTarefas();
   }, []);
 
-  useEffect(() => {
-    if (carregado) {
-      salvarTarefas(lista);
-    }
-  }, [lista, carregado]);
-
   async function carregarTarefas() {
     try {
-      let dados = null;
+      let dados;
 
       if (Platform.OS === 'web') {
-        dados = localStorage.getItem(CHAVE);
+        dados = window.localStorage.getItem(CHAVE);
       } else {
         dados = await AsyncStorage.getItem(CHAVE);
       }
@@ -41,11 +35,8 @@ export default function App() {
       if (dados) {
         setLista(JSON.parse(dados));
       }
-
-      setCarregado(true);
     } catch (error) {
       console.log('Erro ao carregar tarefas:', error);
-      setCarregado(true);
     }
   }
 
@@ -54,7 +45,7 @@ export default function App() {
       const dados = JSON.stringify(novaLista);
 
       if (Platform.OS === 'web') {
-        localStorage.setItem(CHAVE, dados);
+        window.localStorage.setItem(CHAVE, dados);
       } else {
         await AsyncStorage.setItem(CHAVE, dados);
       }
@@ -65,7 +56,7 @@ export default function App() {
 
   function adicionarTarefa() {
     if (tarefa.trim() === '') {
-      alert('Digite uma tarefa!');
+      Alert.alert('Atenção', 'Digite uma tarefa!');
       return;
     }
 
@@ -74,17 +65,23 @@ export default function App() {
       nome: tarefa
     };
 
-    setLista([...lista, novaTarefa]);
+    const novaLista = [...lista, novaTarefa];
+
+    setLista(novaLista);
+    salvarTarefas(novaLista);
     setTarefa('');
   }
 
   function removerTarefa(id) {
     const novaLista = lista.filter(item => item.id !== id);
+
     setLista(novaLista);
+    salvarTarefas(novaLista);
   }
 
   function limparTudo() {
     setLista([]);
+    salvarTarefas([]);
   }
 
   return (
