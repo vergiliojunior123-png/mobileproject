@@ -5,51 +5,69 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  StyleSheet
+  StyleSheet,
+  Platform
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const CHAVE = '@tarefas';
+
 export default function App() {
   const [tarefa, setTarefa] = useState('');
   const [lista, setLista] = useState([]);
-  const [carregou, setCarregou] = useState(false);
+  const [carregado, setCarregado] = useState(false);
 
   useEffect(() => {
     carregarTarefas();
   }, []);
 
   useEffect(() => {
-    if (carregou) {
-      salvarTarefas();
+    if (carregado) {
+      salvarTarefas(lista);
     }
-  }, [lista, carregou]);
+  }, [lista, carregado]);
 
   async function carregarTarefas() {
     try {
-      const tarefasSalvas = await AsyncStorage.getItem('@tarefas');
+      let dados = null;
 
-      if (tarefasSalvas) {
-        setLista(JSON.parse(tarefasSalvas));
+      if (Platform.OS === 'web') {
+        dados = localStorage.getItem(CHAVE);
+      } else {
+        dados = await AsyncStorage.getItem(CHAVE);
       }
 
-      setCarregou(true);
+      if (dados) {
+        setLista(JSON.parse(dados));
+      }
+
+      setCarregado(true);
     } catch (error) {
-      console.log('Erro ao carregar:', error);
-      setCarregou(true);
+      console.log('Erro ao carregar tarefas:', error);
+      setCarregado(true);
     }
   }
 
-  async function salvarTarefas() {
+  async function salvarTarefas(novaLista) {
     try {
-      await AsyncStorage.setItem('@tarefas', JSON.stringify(lista));
+      const dados = JSON.stringify(novaLista);
+
+      if (Platform.OS === 'web') {
+        localStorage.setItem(CHAVE, dados);
+      } else {
+        await AsyncStorage.setItem(CHAVE, dados);
+      }
     } catch (error) {
-      console.log('Erro ao salvar:', error);
+      console.log('Erro ao salvar tarefas:', error);
     }
   }
 
   function adicionarTarefa() {
-    if (tarefa.trim() === '') return;
+    if (tarefa.trim() === '') {
+      alert('Digite uma tarefa!');
+      return;
+    }
 
     const novaTarefa = {
       id: Date.now().toString(),
@@ -61,7 +79,12 @@ export default function App() {
   }
 
   function removerTarefa(id) {
-    setLista(lista.filter(item => item.id !== id));
+    const novaLista = lista.filter(item => item.id !== id);
+    setLista(novaLista);
+  }
+
+  function limparTudo() {
+    setLista([]);
   }
 
   return (
@@ -77,6 +100,10 @@ export default function App() {
 
       <TouchableOpacity style={styles.botao} onPress={adicionarTarefa}>
         <Text style={styles.textoBotao}>Adicionar</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.botaoLimpar} onPress={limparTudo}>
+        <Text style={styles.textoBotao}>Limpar Tudo</Text>
       </TouchableOpacity>
 
       <FlatList
@@ -121,6 +148,13 @@ const styles = StyleSheet.create({
   },
   botao: {
     backgroundColor: '#007AFF',
+    marginTop: 10,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center'
+  },
+  botaoLimpar: {
+    backgroundColor: '#555',
     marginTop: 10,
     padding: 15,
     borderRadius: 8,
