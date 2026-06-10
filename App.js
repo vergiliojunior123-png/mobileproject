@@ -1,124 +1,91 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   StyleSheet,
-  Platform,
-  Alert
-} from 'react-native';
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const CHAVE = '@tarefas';
+} from "react-native";
 
 export default function App() {
-  const [tarefa, setTarefa] = useState('');
-  const [lista, setLista] = useState([]);
+  const [peso, setPeso] = useState("");
+  const [altura, setAltura] = useState("");
+  const [resultado, setResultado] = useState("");
 
-  useEffect(() => {
-    carregarTarefas();
-  }, []);
+  function calcularIMC() {
+    const p = parseFloat(peso.replace(",", "."));
+    const a = parseFloat(altura.replace(",", "."));
 
-  async function carregarTarefas() {
-    try {
-      let dados;
-
-      if (Platform.OS === 'web') {
-        dados = window.localStorage.getItem(CHAVE);
-      } else {
-        dados = await AsyncStorage.getItem(CHAVE);
-      }
-
-      if (dados) {
-        setLista(JSON.parse(dados));
-      }
-    } catch (error) {
-      console.log('Erro ao carregar tarefas:', error);
-    }
-  }
-
-  async function salvarTarefas(novaLista) {
-    try {
-      const dados = JSON.stringify(novaLista);
-
-      if (Platform.OS === 'web') {
-        window.localStorage.setItem(CHAVE, dados);
-      } else {
-        await AsyncStorage.setItem(CHAVE, dados);
-      }
-    } catch (error) {
-      console.log('Erro ao salvar tarefas:', error);
-    }
-  }
-
-  function adicionarTarefa() {
-    if (tarefa.trim() === '') {
-      Alert.alert('Atenção', 'Digite uma tarefa!');
+    if (isNaN(p) || isNaN(a) || p <= 0 || a <= 0) {
+      setResultado("Digite valores válidos.");
       return;
     }
 
-    const novaTarefa = {
-      id: Date.now().toString(),
-      nome: tarefa
-    };
+    const imc = p / (a * a);
 
-    const novaLista = [...lista, novaTarefa];
+    let classificacao = "";
 
-    setLista(novaLista);
-    salvarTarefas(novaLista);
-    setTarefa('');
+    if (imc < 18.5) {
+      classificacao = "Abaixo do peso";
+    } else if (imc < 25) {
+      classificacao = "Peso normal";
+    } else if (imc < 30) {
+      classificacao = "Sobrepeso";
+    } else if (imc < 35) {
+      classificacao = "Obesidade Grau I";
+    } else if (imc < 40) {
+      classificacao = "Obesidade Grau II";
+    } else {
+      classificacao = "Obesidade Grau III";
+    }
+
+    setResultado(
+      `IMC: ${imc.toFixed(2)}\nClassificação: ${classificacao}`
+    );
   }
 
-  function removerTarefa(id) {
-    const novaLista = lista.filter(item => item.id !== id);
-
-    setLista(novaLista);
-    salvarTarefas(novaLista);
-  }
-
-  function limparTudo() {
-    setLista([]);
-    salvarTarefas([]);
+  function limpar() {
+    setPeso("");
+    setAltura("");
+    setResultado("");
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>Lista de Tarefas</Text>
+      <Text style={styles.titulo}>Calculadora de IMC</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Digite uma tarefa"
-        value={tarefa}
-        onChangeText={setTarefa}
+        placeholder="Peso (kg)"
+        keyboardType="numeric"
+        value={peso}
+        onChangeText={setPeso}
       />
 
-      <TouchableOpacity style={styles.botao} onPress={adicionarTarefa}>
-        <Text style={styles.textoBotao}>Adicionar</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.botaoLimpar} onPress={limparTudo}>
-        <Text style={styles.textoBotao}>Limpar Tudo</Text>
-      </TouchableOpacity>
-
-      <FlatList
-        data={lista}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <Text style={styles.textoItem}>{item.nome}</Text>
-
-            <TouchableOpacity
-              style={styles.botaoExcluir}
-              onPress={() => removerTarefa(item.id)}
-            >
-              <Text style={styles.textoExcluir}>X</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+      <TextInput
+        style={styles.input}
+        placeholder="Altura (m)"
+        keyboardType="numeric"
+        value={altura}
+        onChangeText={setAltura}
       />
+
+      <TouchableOpacity style={styles.botao} onPress={calcularIMC}>
+        <Text style={styles.textoBotao}>Calcular IMC</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.botao, { backgroundColor: "#dc3545" }]}
+        onPress={limpar}
+      >
+        <Text style={styles.textoBotao}>Limpar</Text>
+      </TouchableOpacity>
+
+      {resultado !== "" && (
+        <View style={styles.caixaResultado}>
+          <Text style={styles.resultado}>{resultado}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -126,64 +93,54 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    marginTop: 50,
-    backgroundColor: '#f2f2f2'
+    justifyContent: "center",
+    padding: 25,
+    backgroundColor: "#f2f2f2",
   },
+
   titulo: {
     fontSize: 30,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 30,
   },
+
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 8
+    borderColor: "#ccc",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    fontSize: 18,
   },
+
   botao: {
-    backgroundColor: '#007AFF',
-    marginTop: 10,
+    backgroundColor: "#007AFF",
     padding: 15,
-    borderRadius: 8,
-    alignItems: 'center'
-  },
-  botaoLimpar: {
-    backgroundColor: '#555',
+    borderRadius: 10,
+    alignItems: "center",
     marginTop: 10,
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center'
   },
+
   textoBotao: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 18
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 18,
   },
-  item: {
-    backgroundColor: '#fff',
-    marginTop: 15,
-    padding: 15,
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
+
+  caixaResultado: {
+    marginTop: 30,
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
-  textoItem: {
-    fontSize: 18
+
+  resultado: {
+    fontSize: 22,
+    textAlign: "center",
+    fontWeight: "bold",
   },
-  botaoExcluir: {
-    backgroundColor: 'red',
-    width: 35,
-    height: 35,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  textoExcluir: {
-    color: '#fff',
-    fontWeight: 'bold'
-  }
 });
