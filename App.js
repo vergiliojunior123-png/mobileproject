@@ -13,24 +13,30 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function App() {
   const [tarefa, setTarefa] = useState('');
   const [lista, setLista] = useState([]);
+  const [carregou, setCarregou] = useState(false);
 
   useEffect(() => {
     carregarTarefas();
   }, []);
 
   useEffect(() => {
-    salvarTarefas();
-  }, [lista]);
+    if (carregou) {
+      salvarTarefas();
+    }
+  }, [lista, carregou]);
 
   async function carregarTarefas() {
     try {
       const tarefasSalvas = await AsyncStorage.getItem('@tarefas');
 
-      if (tarefasSalvas !== null) {
+      if (tarefasSalvas) {
         setLista(JSON.parse(tarefasSalvas));
       }
+
+      setCarregou(true);
     } catch (error) {
-      console.log('Erro ao carregar tarefas:', error);
+      console.log('Erro ao carregar:', error);
+      setCarregou(true);
     }
   }
 
@@ -38,14 +44,12 @@ export default function App() {
     try {
       await AsyncStorage.setItem('@tarefas', JSON.stringify(lista));
     } catch (error) {
-      console.log('Erro ao salvar tarefas:', error);
+      console.log('Erro ao salvar:', error);
     }
   }
 
   function adicionarTarefa() {
-    if (tarefa.trim() === '') {
-      return;
-    }
+    if (tarefa.trim() === '') return;
 
     const novaTarefa = {
       id: Date.now().toString(),
@@ -57,8 +61,7 @@ export default function App() {
   }
 
   function removerTarefa(id) {
-    const novaLista = lista.filter(item => item.id !== id);
-    setLista(novaLista);
+    setLista(lista.filter(item => item.id !== id));
   }
 
   return (
