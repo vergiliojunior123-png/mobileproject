@@ -1,71 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   FlatList,
-  StyleSheet,
-  Platform
+  StyleSheet
 } from 'react-native';
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const CHAVE = '@tarefas';
 
 export default function App() {
   const [tarefa, setTarefa] = useState('');
   const [lista, setLista] = useState([]);
-  const [carregado, setCarregado] = useState(false);
-
-  useEffect(() => {
-    carregarTarefas();
-  }, []);
-
-  useEffect(() => {
-    if (carregado) {
-      salvarTarefas(lista);
-    }
-  }, [lista, carregado]);
-
-  async function carregarTarefas() {
-    try {
-      let dados = null;
-
-      if (Platform.OS === 'web') {
-        dados = localStorage.getItem(CHAVE);
-      } else {
-        dados = await AsyncStorage.getItem(CHAVE);
-      }
-
-      if (dados) {
-        setLista(JSON.parse(dados));
-      }
-
-      setCarregado(true);
-    } catch (error) {
-      console.log('Erro ao carregar tarefas:', error);
-      setCarregado(true);
-    }
-  }
-
-  async function salvarTarefas(novaLista) {
-    try {
-      const dados = JSON.stringify(novaLista);
-
-      if (Platform.OS === 'web') {
-        localStorage.setItem(CHAVE, dados);
-      } else {
-        await AsyncStorage.setItem(CHAVE, dados);
-      }
-    } catch (error) {
-      console.log('Erro ao salvar tarefas:', error);
-    }
-  }
 
   function adicionarTarefa() {
     if (tarefa.trim() === '') {
-      alert('Digite uma tarefa!');
       return;
     }
 
@@ -83,10 +31,6 @@ export default function App() {
     setLista(novaLista);
   }
 
-  function limparTudo() {
-    setLista([]);
-  }
-
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>Lista de Tarefas</Text>
@@ -100,10 +44,6 @@ export default function App() {
 
       <TouchableOpacity style={styles.botao} onPress={adicionarTarefa}>
         <Text style={styles.textoBotao}>Adicionar</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.botaoLimpar} onPress={limparTudo}>
-        <Text style={styles.textoBotao}>Limpar Tudo</Text>
       </TouchableOpacity>
 
       <FlatList
@@ -148,13 +88,6 @@ const styles = StyleSheet.create({
   },
   botao: {
     backgroundColor: '#007AFF',
-    marginTop: 10,
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center'
-  },
-  botaoLimpar: {
-    backgroundColor: '#555',
     marginTop: 10,
     padding: 15,
     borderRadius: 8,
